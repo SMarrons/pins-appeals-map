@@ -1,0 +1,11 @@
+[
+  {
+    "appeal_reference": "TEST-001",
+    "site_address": "Birmingham test appeal",
+    "lpa": "Birmingham City Council",
+    "decision": "Allowed",
+    "decision_date": "2026-01-01",
+    "lat": 52.4862,
+    "lon": -1.8904
+  }
+]
