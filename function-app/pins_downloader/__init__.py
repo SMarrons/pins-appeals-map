@@ -282,15 +282,15 @@ def parse_xlsx(data: bytes) -> list[dict]:
 
     # PINS workbook has multiple sheets; find the Appeals one
     sheet = None
-for name in wb.sheetnames:
-    lower = name.lower()
+    for name in wb.sheetnames:
+        lower = name.lower()
 
-    if "data" in lower:
-        sheet = wb[name]
-        break
+        if "data" in lower:
+            sheet = wb[name]
+            break
 
-    if "appeal" in lower or "casework" in lower:
-        sheet = wb[name]
+        if "appeal" in lower or "casework" in lower:
+            sheet = wb[name]
 
     if sheet is None:
         sheet = wb.active
