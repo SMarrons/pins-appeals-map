@@ -292,6 +292,7 @@ def parse_xlsx(data: bytes) -> list[dict]:
         sheet = wb.active
 
     logging.info(f"Using sheet: {sheet.title}")
+    logging.info(f"Workbook sheets: {wb.sheetnames}")
 
     rows = list(sheet.iter_rows(values_only=True))
     if not rows:
@@ -307,6 +308,7 @@ def parse_xlsx(data: bytes) -> list[dict]:
 
     headers = [str(c).strip() if c else "" for c in rows[header_row_idx]]
     logging.info(f"Headers found: {headers[:15]}")
+    logging.info(f"Headers found: {headers}")
 
     # Resolve column indices
     cols = {key: find_col(headers, key) for key in COLUMN_MAP}
