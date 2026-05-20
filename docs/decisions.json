@@ -1,11 +1,18 @@
-[
-  {
-    "appeal_reference": "TEST-001",
-    "site_address": "Birmingham test appeal",
-    "lpa": "Birmingham City Council",
-    "decision": "Allowed",
-    "decision_date": "2026-01-01",
-    "lat": 52.4862,
-    "lon": -1.8904
-  }
-]
+{
+  "generatedAt": "2026-05-20T09:30:00Z",
+  "records": [
+    {
+      "id": "TEST-001",
+      "lpa": "Birmingham City Council",
+      "address": "Birmingham test appeal",
+      "outcome": "Allowed",
+      "decisionDate": "2026-01-01",
+      "appealType": "Written representations",
+      "developmentType": "Residential development",
+      "inspector": "Test Inspector",
+      "lat": 52.4862,
+      "lng": -1.8904,
+      "initials": "BI"
+    }
+  ]
+}
