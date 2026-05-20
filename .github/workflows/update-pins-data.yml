@@ -1,0 +1,61 @@
+name: Update PINS data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r function-app/requirements.txt
+
+      - name: Generate decisions.json
+        run: |
+          python - <<'PY'
+          import os, json, datetime, importlib.util
+
+          os.environ["STORAGE_CONNECTION_STRING"] = "dummy"
+
+          spec = importlib.util.spec_from_file_location(
+              "pins_downloader",
+              "function-app/pins_downloader/__init__.py"
+          )
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+
+          url = mod.get_latest_xlsx_url()
+          data = mod.download_xlsx(url)
+          records = mod.parse_xlsx(data)
+
+          payload = {
+              "generatedAt": datetime.datetime.utcnow().isoformat() + "Z",
+              "count": len(records),
+              "records": records
+          }
+
+          with open("docs/decisions.json", "w", encoding="utf-8") as f:
+              json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+
+          print(f"Wrote {len(records)} records to docs/decisions.json")
+          PY
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add docs/decisions.json
+          git commit -m "Update PINS appeal data" || echo "No changes to commit"
+          git push
