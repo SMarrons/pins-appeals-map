@@ -250,7 +250,7 @@ let ALL_DATA = [];
 let filtered = [];
 let activeOutcome = null;
 let markers = [];
-let tileLayer = null;
+let lpaLayer = null;
 
 // ── Map init ──────────────────────────────────────────────────────────────────
 const map = L.map('map', {zoomControl:false, preferCanvas:true}).setView([52.5,-1.5],6);
@@ -461,15 +461,64 @@ function setTheme(theme, btn) {
   tileLayer.bringToBack();
 }
 
-function toggleLPA(btn) {
+async function toggleLPA(btn) {
   btn.classList.toggle('active');
-  // Plug in ONS GeoJSON here:
-  // if (btn.classList.contains('active')) {
-  //   fetch('lpa-boundaries.geojson').then(r=>r.json()).then(gj => {
-  //     lpaLayer = L.geoJSON(gj, {style:{color:'#3b82f6',weight:1,fillOpacity:0.05}}).addTo(map);
-  //   });
-  // } else { map.removeLayer(lpaLayer); }
-  alert('Drop your LPA boundaries GeoJSON file into the project folder and uncomment the toggleLPA code to enable this layer.');
+
+  if (btn.classList.contains('active')) {
+
+    if (lpaLayer) {
+      lpaLayer.addTo(map);
+      return;
+    }
+
+    const resp = await fetch('./lpa-boundaries.geojson');
+    const geojson = await resp.json();
+
+    lpaLayer = L.geoJSON(geojson, {
+      style: {
+        color: '#3b82f6',
+        weight: 1,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.04
+      },
+
+      onEachFeature: function(feature, layer) {
+
+        const p = feature.properties || {};
+
+        const lpaName =
+          p.LAD25NM ||
+          p.LAD24NM ||
+          p.LAD23NM ||
+          p.LAD22NM ||
+          p.LADNM ||
+          p.NAME ||
+          p.name ||
+          'Unknown LPA';
+
+        layer.bindTooltip(lpaName, {
+          sticky: true
+        });
+
+        layer.on('click', function() {
+          document.getElementById('f-lpa').value = lpaName;
+          applyFilters();
+
+          map.fitBounds(layer.getBounds(), {
+            padding: [30, 30]
+          });
+        });
+      }
+
+    }).addTo(map);
+
+  } else {
+
+    if (lpaLayer) {
+      map.removeLayer(lpaLayer);
+    }
+
+  }
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
