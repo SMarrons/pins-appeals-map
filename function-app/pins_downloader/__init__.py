@@ -291,8 +291,8 @@ def parse_xlsx(data: bytes) -> list[dict]:
     if sheet is None:
         sheet = wb.active
 
-    logging.info(f"Using sheet: {sheet.title}")
-    logging.info(f"Workbook sheets: {wb.sheetnames}")
+    print("Using sheet:", sheet.title)
+    print("Workbook sheets:", wb.sheetnames)
 
     rows = list(sheet.iter_rows(values_only=True))
     if not rows:
@@ -307,12 +307,12 @@ def parse_xlsx(data: bytes) -> list[dict]:
             break
 
     headers = [str(c).strip() if c else "" for c in rows[header_row_idx]]
-    logging.info(f"Headers found: {headers[:15]}")
+    print("Headers found:", headers)
     logging.info(f"Headers found: {headers}")
 
     # Resolve column indices
     cols = {key: find_col(headers, key) for key in COLUMN_MAP}
-    logging.info(f"Column mapping: { {k: v for k,v in cols.items() if v is not None} }")
+    print("Column mapping:", {k: v for k, v in cols.items() if v is not None})
 
     records = []
     skipped = 0
