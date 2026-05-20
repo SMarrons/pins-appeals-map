@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "STORAGE_CONNECTION_STRING": "YOUR_STORAGE_CONNECTION_STRING_HERE",
+    "STORAGE_CONTAINER": "pins-data"
+  }
+}

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PINS Appeal Decisions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;font-size:13px;background:#0f1117;color:#e8eaed}
+#shell{display:flex;flex-direction:column;height:100vh}
+#topbar{display:flex;align-items:center;height:44px;background:#0f1117;border-bottom:1px solid rgba(255,255,255,0.07);padding:0 14px;gap:12px;flex-shrink:0;z-index:999}
+#main{display:flex;flex:1;min-height:0}
+#sidebar{width:210px;flex-shrink:0;background:#0f1117;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;overflow:hidden}
+#map-wrap{flex:1;position:relative}
+#map{width:100%;height:100%}
+#bottombar{height:42px;background:#0f1117;border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 16px;gap:32px;flex-shrink:0}
+
+/* Topbar */
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;letter-spacing:.02em;color:#fff;margin-right:4px}
+.logo-icon{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;width:18px;height:18px}
+.logo-icon span{border-radius:1px;display:block}
+.logo-icon span:nth-child(-n+3){background:#3b82f6}
+.logo-icon span:nth-child(n+4):nth-child(-n+6){background:#1d4ed8}
+.logo-icon span:nth-child(n+7){background:#1e3a8a}
+.page-label{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-right:auto}
+.toggle-group{display:flex;background:rgba(255,255,255,0.07);border-radius:6px;overflow:hidden}
+.toggle-group button{background:none;border:none;color:rgba(255,255,255,0.5);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;cursor:pointer;transition:all .15s}
+.toggle-group button.active{background:rgba(255,255,255,0.18);color:#fff}
+.toggle-group button:hover:not(.active){background:rgba(255,255,255,0.1);color:#fff}
+.tb-btn{background:rgba(255,255,255,0.07);border:none;border-radius:6px;color:rgba(255,255,255,0.55);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tb-btn:hover{background:rgba(255,255,255,0.13);color:#fff}
+.tb-btn.active{background:rgba(59,130,246,0.25);color:#93c5fd;border:1px solid rgba(59,130,246,0.3)}
+
+/* Sidebar */
+.sb-section{padding:10px 14px 4px;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.28)}
+.sb-filter{margin:0 10px 5px;position:relative}
+.sb-filter select,.sb-filter input{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.65);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 24px 6px 9px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none}
+.sb-filter input{padding-right:9px}
+.sb-filter input::placeholder{color:rgba(255,255,255,0.22)}
+.sb-filter select:focus,.sb-filter input:focus{border-color:rgba(59,130,246,0.5)}
+.sb-filter::after{content:"▾";position:absolute;right:9px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.3);pointer-events:none;font-size:10px}
+.sb-filter.no-arrow::after{display:none}
+.sb-reset{background:none;border:none;color:rgba(255,255,255,0.28);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:0}
+.sb-reset:hover{color:rgba(255,255,255,0.65)}
+.sb-divider{height:1px;background:rgba(255,255,255,0.07);margin:6px 0}
+.sb-outcome-list{flex:1;overflow-y:auto;padding:0 0 8px;min-height:0}
+.sb-outcome-list::-webkit-scrollbar{width:3px}
+.sb-outcome-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:2px}
+.outcome-row{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;transition:background .12s}
+.outcome-row:hover{background:rgba(255,255,255,0.05)}
+.outcome-row.active{background:rgba(255,255,255,0.08)}
+.outcome-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.outcome-label{flex:1;font-size:12.5px;color:rgba(255,255,255,0.8)}
+.outcome-count{font-size:12px;font-weight:600;color:rgba(255,255,255,0.4)}
+
+/* Bottom bar */
+.stat{display:flex;flex-direction:column;gap:1px}
+.stat-val{font-size:18px;font-weight:600;color:#fff;line-height:1}
+.stat-lbl{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28)}
+.stat-sep{width:1px;height:24px;background:rgba(255,255,255,0.1)}
+
+/* Map */
+.leaflet-control-zoom{display:none}
+.leaflet-control-attribution{display:none}
+.leaflet-container{background:#b8c4cc}
+.leaflet-popup-content-wrapper{background:#1e2030;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e8eaed;box-shadow:0 8px 32px rgba(0,0,0,0.6);padding:0}
+.leaflet-popup-content{margin:0;width:260px!important}
+.leaflet-popup-tip{background:#1e2030}
+.leaflet-popup-close-button{color:rgba(255,255,255,0.35)!important;font-size:18px!important;top:8px!important;right:10px!important}
+.leaflet-popup-close-button:hover{color:#fff!important}
+
+/* Pin marker */
+.pin-card{background:#fff;border-radius:5px;width:36px;height:32px;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:#1a1a2e;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.4);border-top:3px solid #ccc;letter-spacing:.03em;cursor:pointer;transition:transform .12s}
+.pin-card:hover{transform:scale(1.1)}
+.pin-card::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #fff;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.2))}
+
+/* Popup */
+.popup-inner{padding:14px 16px}
+.popup-outcome{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-bottom:10px}
+.popup-ref{font-size:10px;font-family:monospace;color:rgba(255,255,255,0.3);margin-bottom:3px}
+.popup-lpa{font-size:14px;font-weight:600;color:#fff;margin-bottom:3px}
+.popup-addr{font-size:11.5px;color:rgba(255,255,255,0.45);margin-bottom:10px;line-height:1.4}
+.popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}
+.popup-field{background:rgba(255,255,255,0.05);border-radius:5px;padding:6px 8px}
+.popup-field-lbl{font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:2px}
+.popup-field-val{font-size:11.5px;color:rgba(255,255,255,0.8);line-height:1.3}
+.popup-link{font-size:11px;color:#60a5fa;text-decoration:none;display:block;text-align:right;opacity:.75}
+.popup-link:hover{opacity:1}
+
+/* Loading overlay */
+#loading{position:absolute;inset:0;background:rgba(15,17,23,0.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:14px;transition:opacity .4s}
+#loading.hidden{opacity:0;pointer-events:none}
+.spinner{width:32px;height:32px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-text{font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:.04em}
+
+/* Error banner */
+#error-banner{display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#7f1d1d;border:1px solid #ef4444;border-radius:6px;padding:8px 16px;font-size:12px;color:#fca5a5;z-index:1500;white-space:nowrap}
+
+/* Zoom controls */
+#zoom-ctrl{position:absolute;top:12px;left:12px;z-index:500;display:flex;flex-direction:column;gap:1px;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
+#zoom-ctrl button{background:#1e2030;border:none;color:rgba(255,255,255,0.55);width:28px;height:28px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;line-height:1}
+#zoom-ctrl button:hover{background:#2a2d3e;color:#fff}
+
+/* Refresh btn spinner */
+#refresh-btn.loading{animation:spin .8s linear infinite}
+</style>
+</head>
+<body>
+<div id="shell">
+
+  <div id="topbar">
+    <div class="logo">
+      <div class="logo-icon">
+        <span/><span/><span/><span/><span/><span/><span/><span/><span/>
+      </div>
+      PINS Appeals
+    </div>
+    <div class="page-label">Decision Map · England</div>
+
+    <div class="toggle-group" id="theme-group">
+      <button class="active" onclick="setTheme('light',this)">Light</button>
+      <button onclick="setTheme('dark',this)">Dark</button>
+      <button onclick="setTheme('streets',this)">Streets</button>
+      <button onclick="setTheme('satellite',this)">Satellite</button>
+    </div>
+
+    <button class="tb-btn" id="lpa-btn" onclick="toggleLPA(this)">LPA Boundaries</button>
+    <button class="tb-btn" onclick="map.setView([52.5,-1.5],6)">↺ Reset View</button>
+    <button class="tb-btn" id="refresh-btn" onclick="loadData(true)" title="Refresh data now">⟳ Refresh</button>
+    <div id="data-age" style="font-size:11px;color:rgba(255,255,255,0.3);white-space:nowrap"></div>
+  </div>
+
+  <div id="main">
+    <div id="sidebar">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 0">
+        <div class="sb-section" style="padding:0">Filters</div>
+        <button class="sb-reset" onclick="clearFilters()">Reset</button>
+      </div>
+      <div style="height:7px"></div>
+
+      <div class="sb-filter no-arrow">
+        <input type="text" id="f-search" placeholder="Reference, address, LPA..." oninput="applyFilters()"/>
+      </div>
+      <div class="sb-filter">
+        <select id="f-type" onchange="applyFilters()">
+          <option value="">Appeal Type</option>
+          <option>Written representations</option>
+          <option>Hearing</option>
+          <option>Inquiry</option>
+        </select>
+      </div>
+      <div class="sb-filter">
+        <select id="f-devtype" onchange="applyFilters()">
+          <option value="">Development Type</option>
+          <option>Residential development</option>
+          <option>Commercial development</option>
+          <option>Change of use</option>
+          <option>Householder</option>
+          <option>Listed building</option>
+          <option>Enforcement notice</option>
+          <option>Prior approval</option>
+          <option>Advertisement consent</option>
+        </select>
+      </div>
+      <div class="sb-filter no-arrow">
+        <input type="text" id="f-lpa" placeholder="LPA name..." oninput="applyFilters()"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:0 10px 5px">
+        <input type="date" id="f-from" onchange="applyFilters()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.55);font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 6px;outline:none;width:100%"/>
+        <input type="date" id="f-to"   onchange="applyFilters()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.55);font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 6px;outline:none;width:100%"/>
+      </div>
+
+      <div class="sb-divider"></div>
+      <div class="sb-section">Outcome</div>
+      <div class="sb-outcome-list" id="outcome-list"></div>
+
+      <div class="sb-divider"></div>
+      <div class="sb-section">Data source</div>
+      <div style="padding:0 14px 10px;font-size:11px;color:rgba(255,255,255,0.35);line-height:1.5">
+        PINS Casework Database<br>
+        Planning Inspectorate · England<br>
+        <span id="last-updated" style="color:rgba(255,255,255,0.2)">Loading…</span>
+      </div>
+    </div>
+
+    <div id="map-wrap">
+      <div id="map"></div>
+
+      <div id="loading">
+        <div class="spinner"></div>
+        <div class="load-text" id="load-text">Fetching PINS data…</div>
+      </div>
+
+      <div id="error-banner"></div>
+
+      <div id="zoom-ctrl">
+        <button onclick="map.zoomIn()" title="Zoom in">+</button>
+        <button onclick="map.zoomOut()" title="Zoom out">−</button>
+      </div>
+
+      <!-- Legend -->
+      <div id="legend" style="position:absolute;bottom:16px;left:12px;background:rgba(20,22,30,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 13px;z-index:400;font-size:11.5px">
+      </div>
+    </div>
+  </div>
+
+  <div id="bottombar">
+    <div class="stat"><div class="stat-val" id="s-total">—</div><div class="stat-lbl">Decisions</div></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><div class="stat-val" id="s-allowed">—</div><div class="stat-lbl">Allowed</div></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><div class="stat-val" id="s-dismissed">—</div><div class="stat-lbl">Dismissed</div></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><div class="stat-val" id="s-rate">—</div><div class="stat-lbl">Allow rate</div></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><div class="stat-val" id="s-inquiry">—</div><div class="stat-lbl">Inquiries</div></div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG — update this one line after Azure setup ──────────────────────────
+// Replace with your actual blob URL, e.g.:
+// "https://YOURACCOUNTNAME.blob.core.windows.net/pins-data/decisions.json"
+const DATA_URL = "https://YOUR_STORAGE_ACCOUNT.blob.core.windows.net/pins-data/decisions.json";
+
+// ── Outcome colours ───────────────────────────────────────────────────────────
+const OUTCOMES = {
+  "Allowed":         {color:"#22c55e", bg:"rgba(34,197,94,0.15)",  text:"#4ade80"},
+  "Dismissed":       {color:"#ef4444", bg:"rgba(239,68,68,0.15)",  text:"#f87171"},
+  "Allowed in part": {color:"#3b82f6", bg:"rgba(59,130,246,0.15)", text:"#60a5fa"},
+  "Split decision":  {color:"#f59e0b", bg:"rgba(245,158,11,0.15)", text:"#fbbf24"},
+  "Withdrawn":       {color:"#a78bfa", bg:"rgba(167,139,250,0.15)",text:"#c4b5fd"},
+  "Invalid":         {color:"#6b7280", bg:"rgba(107,114,128,0.15)",text:"#9ca3af"},
+};
+
+const TILES = {
+  light:     "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  dark:      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  streets:   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let ALL_DATA = [];
+let filtered = [];
+let activeOutcome = null;
+let markers = [];
+let tileLayer = null;
+
+// ── Map init ──────────────────────────────────────────────────────────────────
+const map = L.map('map', {zoomControl:false, preferCanvas:true}).setView([52.5,-1.5],6);
+tileLayer = L.tileLayer(TILES.light, {maxZoom:18}).addTo(map);
+
+// ── Data loading ──────────────────────────────────────────────────────────────
+async function loadData(manual=false) {
+  showLoading(manual ? "Refreshing data…" : "Fetching PINS data…");
+  hideError();
+  if (manual) {
+    const btn = document.getElementById('refresh-btn');
+    btn.classList.add('loading');
+  }
+  try {
+    const resp = await fetch(DATA_URL + "?t=" + Date.now()); // cache-bust on manual refresh
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+
+    ALL_DATA = json.records || [];
+    filtered = [...ALL_DATA];
+    activeOutcome = null;
+
+    // Show data age
+    if (json.generatedAt) {
+      const age = new Date(json.generatedAt);
+      document.getElementById('last-updated').textContent =
+        "Updated " + age.toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+      updateDataAge(json.generatedAt);
+    }
+
+    clearFilters();
+    hideLoading();
+  } catch(err) {
+    hideLoading();
+    showError("Could not load PINS data — check your DATA_URL and CORS settings. " + err.message);
+    // If first load fails, show a helpful message in the map
+    document.getElementById('load-text').textContent = "Failed to load data";
+  } finally {
+    document.getElementById('refresh-btn').classList.remove('loading');
+  }
+}
+
+function updateDataAge(isoString) {
+  const then = new Date(isoString);
+  const diffMs = Date.now() - then;
+  const diffDays = Math.floor(diffMs / 86400000);
+  const el = document.getElementById('data-age');
+  if (diffDays === 0) el.textContent = "Data: today";
+  else if (diffDays === 1) el.textContent = "Data: yesterday";
+  else el.textContent = `Data: ${diffDays}d ago`;
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function applyFilters() {
+  const search  = document.getElementById('f-search').value.toLowerCase();
+  const type    = document.getElementById('f-type').value;
+  const devtype = document.getElementById('f-devtype').value;
+  const lpa     = document.getElementById('f-lpa').value.toLowerCase();
+  const from    = document.getElementById('f-from').value;
+  const to      = document.getElementById('f-to').value;
+
+  filtered = ALL_DATA.filter(d => {
+    if (search && !(
+      (d.id||'').toLowerCase().includes(search) ||
+      (d.lpa||'').toLowerCase().includes(search) ||
+      (d.address||'').toLowerCase().includes(search) ||
+      (d.developmentType||'').toLowerCase().includes(search)
+    )) return false;
+    if (type    && d.appealType     !== type)    return false;
+    if (devtype && d.developmentType!== devtype) return false;
+    if (lpa     && !(d.lpa||'').toLowerCase().includes(lpa)) return false;
+    if (from    && d.decisionDate < from) return false;
+    if (to      && d.decisionDate > to)   return false;
+    return true;
+  });
+
+  activeOutcome = null;
+  renderMarkers();
+}
+
+function clearFilters() {
+  ['f-search','f-lpa','f-from','f-to'].forEach(id => document.getElementById(id).value = '');
+  ['f-type','f-devtype'].forEach(id => document.getElementById(id).value = '');
+  filtered = [...ALL_DATA];
+  activeOutcome = null;
+  renderMarkers();
+}
+
+// ── Markers ───────────────────────────────────────────────────────────────────
+function renderMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  const data = activeOutcome ? filtered.filter(r => r.outcome === activeOutcome) : filtered;
+
+  // Cap at 2000 markers for performance; show a note if over
+  const cap = 2000;
+  const capped = data.length > cap;
+  const display = capped ? data.slice(0, cap) : data;
+
+  display.forEach(rec => {
+    const color = OUTCOMES[rec.outcome]?.color || '#888';
+    const html = `<div class="pin-card" style="border-top-color:${color}">${rec.initials||'?'}</div>`;
+    const icon = L.divIcon({html, iconSize:[36,38], iconAnchor:[18,38], popupAnchor:[0,-42], className:''});
+    const m = L.marker([rec.lat, rec.lng], {icon}).addTo(map);
+    m.bindPopup(buildPopup(rec), {maxWidth:280, className:''});
+    markers.push(m);
+  });
+
+  updateStats(filtered);
+  updateOutcomeList(filtered);
+  updateLegend();
+
+  if (capped) {
+    showError(`Showing first ${cap.toLocaleString()} of ${data.length.toLocaleString()} results. Refine filters to see more.`);
+  } else {
+    hideError();
+  }
+}
+
+function buildPopup(rec) {
+  const o = OUTCOMES[rec.outcome] || {color:'#888', bg:'rgba(136,136,136,.15)', text:'#aaa'};
+  const d = rec.decisionDate
+    ? new Date(rec.decisionDate).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})
+    : 'Unknown';
+  return `<div class="popup-inner">
+    <div class="popup-outcome" style="background:${o.bg};color:${o.text}">${rec.outcome||'Unknown'}</div>
+    <div class="popup-ref">${rec.id||''}</div>
+    <div class="popup-lpa">${rec.lpa||''}</div>
+    <div class="popup-addr">${rec.address||''}</div>
+    <div class="popup-grid">
+      <div class="popup-field">
+        <div class="popup-field-lbl">Procedure</div>
+        <div class="popup-field-val">${rec.appealType||'—'}</div>
+      </div>
+      <div class="popup-field">
+        <div class="popup-field-lbl">Decision date</div>
+        <div class="popup-field-val">${d}</div>
+      </div>
+      <div class="popup-field" style="grid-column:1/-1">
+        <div class="popup-field-lbl">Development type</div>
+        <div class="popup-field-val">${rec.developmentType||'—'}</div>
+      </div>
+      <div class="popup-field" style="grid-column:1/-1">
+        <div class="popup-field-lbl">Inspector</div>
+        <div class="popup-field-val">${rec.inspector||'—'}</div>
+      </div>
+    </div>
+    <a class="popup-link" href="https://acp.planninginspectorate.gov.uk/ViewCase.aspx?CaseID=${encodeURIComponent(rec.id||'')}" target="_blank">View on PINS portal ↗</a>
+  </div>`;
+}
+
+// ── Stats & legend ────────────────────────────────────────────────────────────
+function updateStats(data) {
+  const allowed   = data.filter(d => d.outcome === 'Allowed').length;
+  const dismissed = data.filter(d => d.outcome === 'Dismissed').length;
+  const inquiry   = data.filter(d => (d.appealType||'').toLowerCase().includes('inquiry')).length;
+  const pct       = data.length ? Math.round(allowed / data.length * 100) : 0;
+  document.getElementById('s-total').textContent     = data.length.toLocaleString();
+  document.getElementById('s-allowed').textContent   = allowed.toLocaleString();
+  document.getElementById('s-dismissed').textContent = dismissed.toLocaleString();
+  document.getElementById('s-rate').textContent      = pct + '%';
+  document.getElementById('s-inquiry').textContent   = inquiry.toLocaleString();
+}
+
+function updateOutcomeList(data) {
+  const counts = {};
+  Object.keys(OUTCOMES).forEach(k => counts[k] = 0);
+  data.forEach(d => { if (d.outcome in counts) counts[d.outcome]++; });
+
+  const allRow = `<div class="outcome-row${!activeOutcome?' active':''}" onclick="setOutcome(null)">
+    <div class="outcome-dot" style="background:#6b7280"></div>
+    <div class="outcome-label">All decisions</div>
+    <div class="outcome-count">${data.length.toLocaleString()}</div>
+  </div>`;
+
+  const rows = Object.entries(OUTCOMES).map(([k,v]) => `
+    <div class="outcome-row${activeOutcome===k?' active':''}" onclick="setOutcome('${k}')">
+      <div class="outcome-dot" style="background:${v.color}"></div>
+      <div class="outcome-label">${k}</div>
+      <div class="outcome-count">${(counts[k]||0).toLocaleString()}</div>
+    </div>`).join('');
+
+  document.getElementById('outcome-list').innerHTML = allRow + rows;
+}
+
+function updateLegend() {
+  const items = Object.entries(OUTCOMES)
+    .filter(([k]) => filtered.some(r => r.outcome === k))
+    .map(([k,v]) => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <div style="width:9px;height:9px;border-radius:50%;background:${v.color};flex-shrink:0"></div>
+      <span style="color:rgba(255,255,255,0.7)">${k}</span>
+    </div>`).join('');
+  document.getElementById('legend').innerHTML = items;
+}
+
+function setOutcome(o) {
+  activeOutcome = o;
+  renderMarkers();
+}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function setTheme(theme, btn) {
+  if (!TILES[theme]) return;
+  document.querySelectorAll('#theme-group button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  map.removeLayer(tileLayer);
+  tileLayer = L.tileLayer(TILES[theme], {maxZoom:18}).addTo(map);
+  tileLayer.bringToBack();
+}
+
+function toggleLPA(btn) {
+  btn.classList.toggle('active');
+  // Plug in ONS GeoJSON here:
+  // if (btn.classList.contains('active')) {
+  //   fetch('lpa-boundaries.geojson').then(r=>r.json()).then(gj => {
+  //     lpaLayer = L.geoJSON(gj, {style:{color:'#3b82f6',weight:1,fillOpacity:0.05}}).addTo(map);
+  //   });
+  // } else { map.removeLayer(lpaLayer); }
+  alert('Drop your LPA boundaries GeoJSON file into the project folder and uncomment the toggleLPA code to enable this layer.');
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function showLoading(msg) {
+  document.getElementById('load-text').textContent = msg || 'Loading…';
+  document.getElementById('loading').classList.remove('hidden');
+}
+function hideLoading() {
+  document.getElementById('loading').classList.add('hidden');
+}
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('error-banner').style.display = 'none';
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
