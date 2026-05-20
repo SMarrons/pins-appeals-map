@@ -196,7 +196,7 @@ LPA_COORDS = {
 # ── Column name aliases (PINS column headers vary between releases) ───────────
 # Maps our internal key → list of possible header strings to try in order
 COLUMN_MAP = {
-    "reference":       ["Appeal Reference", "Case Reference", "Reference", "APP_REF"],
+    "reference":       ["Case Number"],
     "lpa":             ["Local Planning Authority", "LPA Name", "LPA", "LOCAL_PLANNING_AUTHORITY"],
     "outcome":         ["Decision", "Appeal Decision", "Outcome", "DECISION"],
     "appeal_type":     ["Procedure", "Appeal Type", "Type of Appeal", "PROCEDURE"],
